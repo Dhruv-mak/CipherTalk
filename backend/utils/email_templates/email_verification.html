@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #22BC66;
+            color: white;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .button:hover {
+            background-color: #1a9548;
+        }
+        .footer {
+            margin-top: 20px;
+            font-size: 0.8em;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Welcome to Our App, {{ username }}!</h2>
+        <p>We're very excited to have you on board.</p>
+        <p>To verify your email, please click on the following button:</p>
+        <a href="{{ verification_url }}" class="button">Verify your email</a>
+        <p class="footer">Need help, or have questions? Just reply to this email, we'd love to help.</p>
+    </div>
+</body>
+</html>
