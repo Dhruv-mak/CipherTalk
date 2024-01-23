@@ -8,7 +8,7 @@ def get_client() -> MongoClient:
     global client
     if client is None:
         MONGODB_URI = os.environ.get("DATABASE_URI")
-        client = MongoClient(MONGODB_URI)
+        client = MongoClient(MONGODB_URI).freeapi
     return client
 
 
