@@ -1,5 +1,5 @@
-from fastapi import APIRouter, HTTPException, Depends, status, Request
-from models.auth import UserRequest, UserResponse, Token
+from fastapi import APIRouter, HTTPException, Depends, status, Request, Response
+from models.auth import UserRegister, UserResponse, Token, UserLogin
 from models.responses import (
     RegisterResponse,
     EmailVerificationResponse,
@@ -55,16 +55,16 @@ async def login_for_access_token(
 
 @router.post("/register")
 async def register(
-    user: UserRequest, request: Request, db=Depends(get_client)
+    user: UserRegister, request: Request, db=Depends(get_client)
 ) -> RegisterResponse:
     return await register_user(user, request, db)
 
 
 @router.post("/login")
 async def login(
-    user: UserRequest, db: MongoClient = Depends(get_client)
+    user: UserLogin, response: Response, db: MongoClient = Depends(get_client)
 ) -> LoginResponse:
-    return await login_user(user, db)
+    return await login_user(user, response, db)
 
 
 @router.get("/verify-email/{verification_token}")

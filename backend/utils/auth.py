@@ -10,7 +10,7 @@ from db.dbUtils import get_client
 from pymongo import MongoClient
 import os
 import secrets
-from models.auth import TokenData, UserResponse, UserRequest, UserInDB
+from models.auth import TokenData, UserResponse, UserRegister, UserInDB, UserLoginType
 from models.responses import (
     RegisterResponse,
     EmailVerificationResponse,
@@ -22,9 +22,10 @@ from models.responses import (
 )
 from utils.mail import send_email, email_verification_content
 
-SECRET_KEY = os.environ.get("SECRET_KEY")
-ALGORITHM = "HS256"
+ACCESS_TOKEN_SECRET = os.environ.get("ACCESS_TOKEN_SECRET")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.environ.get("ACCESS_TOKEN_EXPIRE_MINUTES"))
+REFRESH_TOKEN_SECRET = os.environ.get("REFRESH_TOKEN_SECRET")
+ALGORITHM = "HS256"
 REFRESH_TOKEN_EXPIRY = int(os.environ.get("REFRESH_TOKEN_EXPIRY"))
 
 
@@ -65,7 +66,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
     else:
         expire = datetime.now(timezone.utc) + timedelta(minutes=15)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    encoded_jwt = jwt.encode(to_encode, ACCESS_TOKEN_SECRET, algorithm=ALGORITHM)
     return encoded_jwt
 
 
@@ -78,7 +79,7 @@ async def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, ACCESS_TOKEN_SECRET, algorithms=[ALGORITHM])
         username: str = payload.get("username")
         if username is None:
             raise credentials_exception
@@ -112,7 +113,7 @@ async def generate_refresh_token(data: dict):
 
 
 async def register_user(
-    user_request: UserRequest, request: Request, db: MongoClient
+    user_request: UserRegister, request: Request, db: MongoClient
 ) -> UserResponse:
     users_collection = db.users
 
@@ -132,6 +133,7 @@ async def register_user(
             "updatedAt": datetime.now(),
             "emailVerificationToken": hashed_token,
             "emailVerificationExpiry": token_expiry,
+            "loginType": UserLoginType.EMAIL_PASSWORD,
             "isEmailVerified": False,
             "refreshToken": "",
             "forgotPasswordToken": "",
@@ -146,10 +148,11 @@ async def register_user(
     await send_email(user_request.email, "Verify Your Email", html_content)
 
     # Remove sensitive data before returning the user object
-    user_data.pop("password", None)
     user_data.pop("emailVerificationToken", None)
     user_data.pop("emailVerificationExpiry", None)
-
+    user_data.pop("password", None)
+    user_data.pop("refreshToken", None)
+    
     user_response = UserResponse(**user_data)
     return RegisterResponse(
         message="User registered successfully",
@@ -160,17 +163,16 @@ async def register_user(
 
 
 async def login_user(
-    login_request: UserRequest,
+    login_request: UserRegister,
     response: Response,
     db: MongoClient = Depends(get_client),
 ) -> LoginResponse:
     if not login_request.username and not login_request.email:
         raise HTTPException(status_code=400, detail="Username or email is required")
 
-    query = {
-        "$or": [{"username": login_request.username}, {"email": login_request.email}]
-    }
-    user = db.users.find_one(query)
+    user = db.users.find_one({
+        "username": login_request.username
+    })
 
     if not user:
         raise HTTPException(status_code=404, detail="User does not exist")
@@ -179,9 +181,10 @@ async def login_user(
     if not is_password_valid:
         raise HTTPException(status_code=401, detail="Invalid user credentials")
 
+    user_id = str(user.get("_id"))
     access_token = await generate_access_token(
         {
-            "_id": user.get("_id"),
+            "_id": user_id,
             "username": user.get("username"),
             "email": user.get("email"),
             "role": user.get("role")
@@ -189,7 +192,7 @@ async def login_user(
     )
     refresh_token = await generate_refresh_token(
         {
-            "_id": user.get("_id"),
+            "_id": user_id,
             "username": user.get("username"),
             "email": user.get("email"),
             "role": user.get("role")
@@ -203,10 +206,9 @@ async def login_user(
         key="refreshToken", value=refresh_token, httponly=True, secure=True
     )
 
-    # Exclude sensitive data from the response
+    # removing sensitive information before returning the user object
     user.pop("password", None)
     user.pop("refreshToken", None)
-    # ... exclude other sensitive fields ...
 
     return LoginResponse(
         message="User logged in successfully",
