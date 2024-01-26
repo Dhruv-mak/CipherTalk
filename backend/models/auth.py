@@ -9,9 +9,9 @@ class UserRoles(str, Enum):
     USER = "USER"
 
 class UserLoginType(str, Enum):
-    GOOGLE = "google"
-    GITHUB = "github"
-    EMAIL_PASSWORD = "email_password"
+    GOOGLE = "GOOGLE"
+    GITHUB = "GITHUB"
+    EMAIL_PASSWORD = "EMAIL_PASSWORD"
 
 class Attachment(BaseModel):
     id: str = Field(default_factory=lambda: str(ObjectId()), alias="_id")
@@ -60,11 +60,14 @@ class UserInDB(UserResponse):
         json_encoders = {
             Enum: lambda v: v.value,
         }
-        allow_population_by_field_name = True
+        populate_by_name = True
 
 class Token(BaseModel):
     access_token: str
     token_type: str
 
 class TokenData(BaseModel):
-    username: Optional[str] = None
+    username: str | None = None
+    email: EmailStr | None = None
+    role: UserRoles | None = None
+    

@@ -1,8 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
-
+from bson import ObjectId
 from fastapi import Depends, HTTPException, status, Request, Response, Cookie, Body
-from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from passlib.hash import hex_sha256
@@ -20,7 +19,7 @@ from models.responses import (
     LoginResponse,
     BaseResponse,
 )
-from utils.mail import send_email, email_verification_content
+from utils.mail import send_email, email_verification_content, forgot_password_content
 
 ACCESS_TOKEN_SECRET = os.environ.get("ACCESS_TOKEN_SECRET")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.environ.get("ACCESS_TOKEN_EXPIRE_MINUTES"))
@@ -31,7 +30,19 @@ REFRESH_TOKEN_EXPIRY = int(os.environ.get("REFRESH_TOKEN_EXPIRY"))
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+def verify_and_return_token(accessToken: Annotated[str | None, Cookie()] = None):
+    if not accessToken:
+        raise HTTPException(status_code=401, detail="Unauthorized request")
+    try:
+        decoded_token = jwt.decode(
+            accessToken, ACCESS_TOKEN_SECRET, algorithms=[ALGORITHM]
+        )
+    except JWTError as error:
+        raise HTTPException(
+            status_code=401, detail=str(error) or "Invalid access token"
+        )
+    return decoded_token
 
 
 def verify_password(plain_password, hashed_password):
@@ -40,14 +51,6 @@ def verify_password(plain_password, hashed_password):
 
 def get_password_hash(password):
     return pwd_context.hash(password)
-
-
-def get_user(db, username: str):
-    user = db.users.find_one({"username": username})
-    if user:
-        return UserInDB(**user)
-    else:
-        raise HTTPException(status_code=404, detail="User not found")
 
 
 def authenticate_user(db, username: str, password: str):
@@ -59,34 +62,26 @@ def authenticate_user(db, username: str, password: str):
     return user
 
 
-def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
+def create_token(data: dict, key: str, expires_delta: timedelta | None = None) -> str:
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
     else:
         expire = datetime.now(timezone.utc) + timedelta(minutes=15)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, ACCESS_TOKEN_SECRET, algorithm=ALGORITHM)
+    encoded_jwt = jwt.encode(to_encode, key, algorithm=ALGORITHM)
     return encoded_jwt
 
 
-async def get_current_user(
-    token: Annotated[str, Depends(oauth2_scheme)], db: MongoClient = Depends(get_client)
-):
+async def get_current_user(token: dict, db: MongoClient) -> dict:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
     )
-    try:
-        payload = jwt.decode(token, ACCESS_TOKEN_SECRET, algorithms=[ALGORITHM])
-        username: str = payload.get("username")
-        if username is None:
-            raise credentials_exception
-        token_data = TokenData(username=username)
-    except JWTError:
+    username: str = token.get("username")
+    if username is None:
         raise credentials_exception
-    user = get_user(db, username=token_data.username)
+    user = db.users.find_one({"username": username})
     if user is None:
         raise credentials_exception
     return user
@@ -102,13 +97,13 @@ def generate_temporary_token():
 
 async def generate_access_token(data: dict):
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(data=data, expires_delta=access_token_expires)
+    access_token = create_token(data, ACCESS_TOKEN_SECRET,expires_delta=access_token_expires)
     return access_token
 
 
 async def generate_refresh_token(data: dict):
     refresh_token_expires = timedelta(days=REFRESH_TOKEN_EXPIRY)
-    refresh_token = create_access_token(data=data, expires_delta=refresh_token_expires)
+    refresh_token = create_token(data, REFRESH_TOKEN_SECRET, expires_delta=refresh_token_expires)
     return refresh_token
 
 
@@ -135,9 +130,14 @@ async def register_user(
             "emailVerificationExpiry": token_expiry,
             "loginType": UserLoginType.EMAIL_PASSWORD,
             "isEmailVerified": False,
-            "refreshToken": "",
-            "forgotPasswordToken": "",
-            "forgotPasswordExpiry": "",
+            "refreshToken": None,
+            "forgotPasswordToken": None,
+            "forgotPasswordExpiry": None,
+            "avatar": {
+                "_id": ObjectId(),
+                "url": "https://via.placeholder.com/200x200.png",
+                "location": "",
+            }
         }
     )
 
@@ -150,9 +150,9 @@ async def register_user(
     # Remove sensitive data before returning the user object
     user_data.pop("emailVerificationToken", None)
     user_data.pop("emailVerificationExpiry", None)
-    user_data.pop("password", None)
     user_data.pop("refreshToken", None)
-    
+
+    user_data.update({"password": user_request.password})
     user_response = UserResponse(**user_data)
     return RegisterResponse(
         message="User registered successfully",
@@ -165,14 +165,12 @@ async def register_user(
 async def login_user(
     login_request: UserRegister,
     response: Response,
-    db: MongoClient = Depends(get_client),
+    db: MongoClient,
 ) -> LoginResponse:
     if not login_request.username and not login_request.email:
         raise HTTPException(status_code=400, detail="Username or email is required")
 
-    user = db.users.find_one({
-        "username": login_request.username
-    })
+    user = db.users.find_one({"username": login_request.username})
 
     if not user:
         raise HTTPException(status_code=404, detail="User does not exist")
@@ -187,7 +185,7 @@ async def login_user(
             "_id": user_id,
             "username": user.get("username"),
             "email": user.get("email"),
-            "role": user.get("role")
+            "role": user.get("role"),
         }
     )
     refresh_token = await generate_refresh_token(
@@ -195,7 +193,7 @@ async def login_user(
             "_id": user_id,
             "username": user.get("username"),
             "email": user.get("email"),
-            "role": user.get("role")
+            "role": user.get("role"),
         }
     )
 
@@ -205,8 +203,9 @@ async def login_user(
     response.set_cookie(
         key="refreshToken", value=refresh_token, httponly=True, secure=True
     )
+    
+    db.users.update_one({"_id": ObjectId(user_id)}, {"$set": {"refreshToken": refresh_token}})
 
-    # removing sensitive information before returning the user object
     user.pop("password", None)
     user.pop("refreshToken", None)
 
@@ -214,11 +213,17 @@ async def login_user(
         message="User logged in successfully",
         statusCode=200,
         success=True,
-        data=LoginData(user=UserResponse(**user), accessToken=access_token, refreshToken=refresh_token),
+        data=LoginData(
+            user=UserResponse(**user),
+            accessToken=access_token,
+            refreshToken=refresh_token,
+        ),
     )
 
 
-async def verify_email(verification_token: str, db: MongoClient):
+async def verify_email(
+    verification_token: str, db: MongoClient
+) -> EmailVerificationResponse:
     hashed_token = hex_sha256.hash(verification_token)
 
     user = db.users.find_one(
@@ -250,9 +255,11 @@ async def verify_email(verification_token: str, db: MongoClient):
 
 
 async def refresh_access_token(
-    refresh_token: str = Cookie(None), db: MongoClient = Depends(get_client)
+    db: MongoClient,
+    response: Response,
+    refresh_token: str | None = None,
 ):
-    refresh_token = refresh_token or Body(None)
+    refresh_token = refresh_token or Body()
     if not refresh_token:
         raise HTTPException(status_code=401, detail="Unauthorized request")
 
@@ -266,7 +273,7 @@ async def refresh_access_token(
         if not user_id:
             raise HTTPException(status_code=401, detail="Invalid refresh token")
 
-        user = db.users.find_one({"_id": user_id})
+        user = db.users.find_one({"_id": ObjectId(user_id)})
         if not user:
             raise HTTPException(status_code=401, detail="Invalid refresh token")
 
@@ -280,22 +287,22 @@ async def refresh_access_token(
                 "_id": user_id,
                 "username": user.get("username"),
                 "email": user.get("email"),
-                "role": user.get("role") 
+                "role": user.get("role"),
             }
         )
-        new_refresh_token = await generate_refresh_token(
+        refresh_token = await generate_refresh_token(
             {
                 "_id": user_id,
                 "username": user.get("username"),
                 "email": user.get("email"),
-                "role": user.get("role") 
+                "role": user.get("role"),
             }
         )
 
         db.users.update_one(
-            {"_id": user_id}, {"$set": {"refreshToken": new_refresh_token}}
+            {"username": decoded_token["username"]}, {"$set": {"refreshToken": refresh_token}}
         )
-        response = {"accessToken": access_token, "refreshToken": new_refresh_token}
+        data = {"accessToken": access_token, "refreshToken": refresh_token}
 
         response.set_cookie(
             key="accessToken",
@@ -306,91 +313,94 @@ async def refresh_access_token(
         )
         response.set_cookie(
             key="refreshToken",
-            value=new_refresh_token,
+            value=refresh_token,
             httponly=True,
             secure=True,
             samesite="Lax",
         )
 
         return RefreshTokenResponse(
-            status=200, data=response, message="Access token refreshed"
+            statusCode=200, data=data, message="Access token refreshed", success=True
         )
     except JWTError as error:
         raise HTTPException(
             status_code=401, detail=str(error) or "Invalid refresh token"
         )
 
-async def forgot_password(email: str, request: Request, db: MongoClient = Depends(get_client)):
+
+async def forgot_password(
+    email: str, request: Request, db: MongoClient = Depends(get_client)
+) -> BaseResponse:
     user = db.users.find_one({"email": email})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     unHashedToken, hashedToken, tokenExpiry = generate_temporary_token()
-    
+
     db.users.update_one(
         {"email": email},
         {
             "$set": {
                 "forgotPasswordToken": hashedToken,
-                "forgotPasswordExpiry": tokenExpiry
+                "forgotPasswordExpiry": tokenExpiry,
             }
-        }
+        },
     )
-    
+    # need to change the url when the frontend is up
     forgotPasswordUrl = f"{request.base_url}users/reset-password/{unHashedToken}"
     htmlContent = forgot_password_content(user["username"], forgotPasswordUrl)
-    send_email(user["email"], "Reset Your Password", htmlContent)
+    await send_email(user["email"], "Reset Your Password", htmlContent)
     return BaseResponse(
         message="Forgot password email sent successfully",
         statusCode=200,
         success=True,
     )
 
-async def reset_password(resetPasswordToken: str, newPassword: str, db: MongoClient = Depends(get_client)):
+
+async def reset_password(
+    resetPasswordToken: str, newPassword: str, db: MongoClient = Depends(get_client)
+):
     hashedToken = hex_sha256.hash(resetPasswordToken)
     user = db.users.find_one(
         {
             "forgotPasswordToken": hashedToken,
-            "forgotPasswordExpiry": {"$gt": datetime.now()}
+            "forgotPasswordExpiry": {"$gt": datetime.now()},
         }
     )
     if not user:
         raise HTTPException(status_code=400, detail="Invalid reset password token")
-    
+
     hashedPassword = get_password_hash(newPassword)
-    
+
     db.users.update_one(
         {"forgotPasswordToken": hashedToken},
         {
             "$set": {
                 "password": hashedPassword,
                 "forgotPasswordToken": None,
-                "forgotPasswordExpiry": None
+                "forgotPasswordExpiry": None,
             }
-        }
+        },
     )
-    
+
     return BaseResponse(
         message="Password reset successfully",
         statusCode=200,
         success=True,
     )
 
+
 async def logout_user(
-    current_user: Annotated[UserResponse, Depends(get_current_user)],
+    token: dict,
     response: Response,
-    db: MongoClient = Depends(get_client),
+    db: MongoClient,
 ):
     updated_user = db.users.update_one(
-        {"_id": current_user._id}, {"$set": {"refreshToken": ""}}
+        {"_id": token["_id"]}, {"$set": {"refreshToken": ""}}
     )
     if not updated_user:
         raise HTTPException(status_code=400, detail="User not found")
-    
-    cookie_options = {
-        "httponly": True,
-        "secure": True,
-        "samesite": "Lax"
-    }
+
+    cookie_options = {"httponly": True, "secure": True, "samesite": "Lax"}
     response.delete_cookie("accessToken", **cookie_options)
     response.delete_cookie("refreshToken", **cookie_options)
     return BaseResponse(
@@ -399,62 +409,59 @@ async def logout_user(
         success=True,
     )
 
+
 async def change_password(
-    current_user: Annotated[UserResponse, Depends(get_current_user)],
+    token: dict,
     old_password: str,
     new_password: str,
     db: MongoClient = Depends(get_client),
 ):
-    user = db.users.find_one({"_id": current_user._id})
+    user = db.users.find_one({"_id": ObjectId(token["_id"])})
     if not user:
         raise HTTPException(status_code=400, detail="User not found")
-    
+
     is_password_valid = verify_password(old_password, user["password"])
     if not is_password_valid:
         raise HTTPException(status_code=401, detail="Invalid user credentials")
-    
+
     hashedPassword = get_password_hash(new_password)
-    
+
     db.users.update_one(
-        {"_id": current_user._id},
-        {
-            "$set": {
-                "password": hashedPassword
-            }
-        }
+        {"_id": ObjectId(token["_id"])}, {"$set": {"password": hashedPassword}}
     )
-    
+
     return BaseResponse(
         message="Password changed successfully",
         statusCode=200,
         success=True,
     )
 
+
 async def resend_email_verification(
-    user: Annotated[UserResponse, Depends(get_current_user)],
+    token: dict,
     request: Request,
-    db: MongoClient = Depends(get_client),
+    db: MongoClient,
 ):
-    user = db.users.find_one({"_id": user._id})
+    user = db.users.find_one({"_id": ObjectId(token["_id"])})
     if not user:
         raise HTTPException(status_code=400, detail="User not found")
-    
+
     unhashedToken, hashedToken, tokenExpiry = generate_temporary_token()
-    
+
     db.users.update_one(
-        {"_id": user._id},
+        {"_id": ObjectId(token["_id"])},
         {
             "$set": {
                 "emailVerificationToken": hashedToken,
-                "emailVerificationExpiry": tokenExpiry
+                "emailVerificationExpiry": tokenExpiry,
             }
-        }
+        },
     )
-    
+
     verifyEmailUrl = f"{request.base_url}users/verify-email/{unhashedToken}"
-    htmlContent = email_verification_content(user.username, verifyEmailUrl)
-    await send_email(user.email, "Verify Your Email", htmlContent)
-    
+    htmlContent = email_verification_content(user["username"], verifyEmailUrl)
+    await send_email(user["email"], "Verify Your Email", htmlContent)
+
     return BaseResponse(
         message="Verification email sent successfully",
         statusCode=200,
