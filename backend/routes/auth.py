@@ -1,13 +1,13 @@
 from fastapi import APIRouter, HTTPException, Depends, status, Request, Response, Cookie
 from models.auth import UserRegister, UserResponse, Token, UserLogin
 from models.responses import (
-    RegisterResponse,
+    RegisterAndCurrentUserResponse,
     EmailVerificationResponse,
     LoginResponse,
     RefreshTokenResponse,
     BaseResponse
 )
-from db.dbUtils import get_client
+from utils.dbUtils import get_client
 from typing import Annotated
 from pymongo import MongoClient
 from datetime import timedelta
@@ -30,7 +30,7 @@ router = APIRouter()
 @router.post("/register")
 async def register(
     user: UserRegister, request: Request, db: Annotated[MongoClient, Depends(get_client)]
-) -> RegisterResponse:
+) -> RegisterAndCurrentUserResponse:
     return await register_user(user, request, db)
 
 
@@ -90,11 +90,11 @@ async def logout(
     return await logout_user(token, response, db)
 
 
-@router.get("/current-user", response_model=UserResponse)
+@router.get("/current-user")
 async def read_users_me(
     token: Annotated[dict, Depends(verify_and_return_token)],
     db: Annotated[MongoClient, Depends(get_client)],
-) -> UserResponse:
+) -> RegisterAndCurrentUserResponse:
     return await get_current_user(token, db)
 
 @router.post("/change-password")

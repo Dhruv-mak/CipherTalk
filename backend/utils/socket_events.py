@@ -1,9 +1,17 @@
 import socketio
 from models.auth import UserInDB
 from jose import jwt
-from db.dbUtils import get_client
+from utils.dbUtils import get_client
 import os
 from models.chat import ChatEventType
+
+sio : socketio.AsyncServer | None = None
+
+def get_socketio():
+    global sio
+    if not sio:
+        sio = socketio.AsyncServer(async_mode='asgi', cors_allowed_origins=[])
+    return sio
 
 def create_socket_events(sio: socketio.AsyncServer):
     @sio.event

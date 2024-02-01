@@ -5,13 +5,13 @@ from fastapi import Depends, HTTPException, status, Request, Response, Cookie, B
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from passlib.hash import hex_sha256
-from db.dbUtils import get_client
+from utils.dbUtils import get_client
 from pymongo import MongoClient
 import os
 import secrets
 from models.auth import TokenData, UserResponse, UserRegister, UserInDB, UserLoginType
 from models.responses import (
-    RegisterResponse,
+    RegisterAndCurrentUserResponse,
     EmailVerificationResponse,
     EmailVerificationData,
     RefreshTokenResponse,
@@ -84,7 +84,12 @@ async def get_current_user(token: dict, db: MongoClient) -> dict:
     user = db.users.find_one({"username": username})
     if user is None:
         raise credentials_exception
-    return user
+    return RegisterAndCurrentUserResponse(
+        message="User retrieved successfully",
+        statusCode=200,
+        success=True,
+        data=UserResponse(**user),
+    )
 
 
 def generate_temporary_token():
@@ -136,7 +141,7 @@ async def register_user(
             "avatar": {
                 "_id": ObjectId(),
                 "url": "https://via.placeholder.com/200x200.png",
-                "location": "",
+                "localPath": "",
             }
         }
     )
@@ -154,7 +159,7 @@ async def register_user(
 
     user_data.update({"password": user_request.password})
     user_response = UserResponse(**user_data)
-    return RegisterResponse(
+    return RegisterAndCurrentUserResponse(
         message="User registered successfully",
         statusCode=201,
         success=True,
@@ -198,10 +203,10 @@ async def login_user(
     )
 
     response.set_cookie(
-        key="accessToken", value=access_token, httponly=True, secure=True
+        key="accessToken", value=access_token, httponly=True, samesite='none'
     )
     response.set_cookie(
-        key="refreshToken", value=refresh_token, httponly=True, secure=True
+        key="refreshToken", value=refresh_token, httponly=True, samesite='none'
     )
     
     db.users.update_one({"_id": ObjectId(user_id)}, {"$set": {"refreshToken": refresh_token}})
