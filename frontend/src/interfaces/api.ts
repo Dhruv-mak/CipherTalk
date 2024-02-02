@@ -1,4 +1,4 @@
-export interface FreeAPISuccessResponseInterface {
+export interface SuccessResponseInterface {
   data: any;
   message: string;
   statusCode: number;
