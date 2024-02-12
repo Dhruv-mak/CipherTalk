@@ -10,16 +10,12 @@ import socketio
 from utils.socket_events import create_socket_events, get_socketio
 from fastapi.middleware.cors import CORSMiddleware
 
-origins = [
-    "http://localhost:3000",
-]
-
 load_dotenv()
 
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"]
