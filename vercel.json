@@ -1,0 +1,8 @@
+{
+    "rewrites": [
+        {
+            "source": "/cypher-talk/(.*)",
+            "destination": "https://20.96.176.239/cypher-talk"
+        }
+    ]
+}
