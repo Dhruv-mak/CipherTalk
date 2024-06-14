@@ -9,6 +9,9 @@ const apiClient = axios.create({
   timeout: 120000,
 });
 
+console.log("Server URI: ", import.meta.env.VITE_SERVER_URI);
+console.log("Socket URI: ", import.meta.env.VITE_SOCKET_URI);
+
 // Add an interceptor to set authorization header with user token before requests
 apiClient.interceptors.request.use(
   function (config) {
