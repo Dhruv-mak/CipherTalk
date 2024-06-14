@@ -1,7 +1,7 @@
 {
     "headers": [
       {
-        "source": "https://20.96.176.239/cypher-talk/*",
+        "source": "https://20.96.176.239/cypher-talk/(.*)",
         "headers": [
           { "key": "Access-Control-Allow-Credentials", "value": "true" },
           { "key": "Access-Control-Allow-Origin", "value": "*" },
