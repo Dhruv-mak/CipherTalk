@@ -11,8 +11,8 @@ import PublicRoute from "./components/PublicRoute";
 const App = () => {
   // Extracting 'token' and 'user' from the authentication context
   const { token, user } = useAuth();
-  console.log("VITE_SERVER_URI: ", import.meta.env.VITE_SERVER_URI);
-  console.log("VITE_SOCKET_URI: ", import.meta.env.VITE_SOCKET_URI);
+  console.warn("VITE_SERVER_URI: ", import.meta.env.VITE_SERVER_URI);
+  console.warn("VITE_SOCKET_URI: ", import.meta.env.VITE_SOCKET_URI);
 
   return (
     <Routes>
