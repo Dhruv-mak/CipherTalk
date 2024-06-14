@@ -10,6 +10,13 @@ export default defineConfig({
   server: {
     host: "localhost",
     port: 3000,
-  },
-  // base: "/CypherTalk/",
+    proxy: {
+      '/cypher-talk': {
+        target: 'https://20.96.176.239',
+        changeOrigin: true,
+        // secure: false,
+        rewrite: (path) => path.replace(/^\/cypher-talk/, '/cypher-talk'),
+      },
+    },
+  }
 });
