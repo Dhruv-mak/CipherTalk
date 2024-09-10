@@ -23,7 +23,7 @@ This repository contains the frontend application developed using Next.js and Ty
 
 To get started with this project, first clone the repository:
 
-````bash
+```bash
 git clone <repository-url>
 cd <repository-name>
 ```
