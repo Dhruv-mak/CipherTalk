@@ -1,8 +1,51 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Frontend Application
+
+## Introduction
+
+This repository contains the frontend application developed using Next.js and TypeScript, utilizing Vite for enhanced development performance and optimized builds. This application provides a responsive and intuitive interface for a chat system that interacts with the backend API to manage user authentication and real-time communications.
+
+## Features
+
+- **User Authentication**: Allows users to register, login, and manage sessions.
+- **Real-Time Chat**: Users can engage in one-on-one or group chats in real-time.
+- **Responsive Design**: Adaptable interface for optimal viewing on multiple device types.
+- **Font Optimization**: Utilizes [next/font](https://nextjs.org/docs/basic-features/font-optimization) for efficient font loading.
+
+### Screenshots
+
+- _Home Page_: ![](path-to-home-page-screenshot)
+- _Chat Interface_: ![](path-to-chat-interface-screenshot)
+- _User Profile Settings_: ![](path-to-user-profile-settings-screenshot)
 
 ## Getting Started
 
-First, run the development server:
+### Clone the Repository
+
+To get started with this project, first clone the repository:
+
+````bash
+git clone <repository-url>
+cd <repository-name>
+```
+
+
+### Installation
+
+After cloning the repository, install the dependencies:
+
+```bash
+npm install
+# or
+yarn
+# or
+pnpm install
+# or
+bun install
+```
+
+### Running the Development Server
+
+Run the development server with the following command:
 
 ```bash
 npm run dev
@@ -14,23 +57,16 @@ pnpm dev
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result. You can start editing the page by modifying \`app/page.tsx\`. The page auto-updates as you edit the file.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Deployment
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+Deploy your Next.js app using the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme), provided by the creators of Next.js. See the [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
 
-## Learn More
+## Contributing
 
-To learn more about Next.js, take a look at the following resources:
+Contributions to improve the application are welcome. Please ensure to update tests as appropriate when contributing.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## License
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
