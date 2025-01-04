@@ -12,7 +12,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()
 
-app = FastAPI()
+app = FastAPI(
+    root_path="/chat"
+)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
