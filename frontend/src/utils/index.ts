@@ -1,14 +1,14 @@
 // Importing necessary modules and interfaces
 import { AxiosResponse } from "axios";
-import { SuccessResponseInterface } from "../interfaces/api";
+import { FreeAPISuccessResponseInterface } from "../interfaces/api";
 import { ChatListItemInterface } from "../interfaces/chat";
 import { UserInterface } from "../interfaces/user";
 
 // A utility function for handling API requests with loading, success, and error handling
 export const requestHandler = async (
-  api: () => Promise<AxiosResponse<SuccessResponseInterface, any>>,
+  api: () => Promise<AxiosResponse<FreeAPISuccessResponseInterface, any>>,
   setLoading: ((loading: boolean) => void) | null,
-  onSuccess: (data: SuccessResponseInterface) => void,
+  onSuccess: (data: FreeAPISuccessResponseInterface) => void,
   onError: (error: string) => void
 ) => {
   // Show loading state if setLoading function is provided

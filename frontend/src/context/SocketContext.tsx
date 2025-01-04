@@ -9,7 +9,6 @@ const getSocket = () => {
 
   // Create a socket connection with the provided URI and authentication
   return socketio(import.meta.env.VITE_SOCKET_URI, {
-    path: "/socket/socket.io",
     withCredentials: true,
     auth: { token },
   });

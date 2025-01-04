@@ -44,7 +44,6 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setIsLoading,
       (res) => {
         const { data } = res;
-        console.log(data);
         setUser(data.user);
         setToken(data.accessToken);
         LocalStorage.set("user", data.user);
