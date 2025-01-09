@@ -32,36 +32,36 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def verify_and_return_token(accessToken: Annotated[str | None, Cookie()] = None):
-    # if not accessToken:
-    #     raise HTTPException(status_code=401, detail="Unauthorized request")
-    # try:
-    #     decoded_token = jwt.decode(
-    #         accessToken, ACCESS_TOKEN_SECRET, algorithms=[ALGORITHM]
-    #     )
-    # except JWTError as error:
-    #     raise HTTPException(
-    #         status_code=401, detail=str(error) or "Invalid access token"
-    #     )
-    # return decoded_token
-    config = get_settings()
-    jwks_url = f"https://{config.auth0_domain}/.well-known/jwks.json"
-    jwks_client = PyJwksClient(jwks_url)
-    
     if not accessToken:
         raise HTTPException(status_code=401, detail="Unauthorized request")
-    signing_key = jwks_client.get_signing_key_from_jwt(accessToken)
     try:
         decoded_token = jwt.decode(
-            accessToken,
-            signing_key,
-            audience=config.auth0_api_audience,
-            issuer=config.auth0_issuer,
-            algorithms=config.auth0_algorithms,
+            accessToken, ACCESS_TOKEN_SECRET, algorithms=[ALGORITHM]
         )
     except JWTError as error:
         raise HTTPException(
             status_code=401, detail=str(error) or "Invalid access token"
         )
+    return decoded_token
+    # config = get_settings()
+    # jwks_url = f"https://{config.auth0_domain}/.well-known/jwks.json"
+    # jwks_client = PyJwksClient(jwks_url)
+    
+    # if not accessToken:
+    #     raise HTTPException(status_code=401, detail="Unauthorized request")
+    # signing_key = jwks_client.get_signing_key_from_jwt(accessToken)
+    # try:
+    #     decoded_token = jwt.decode(
+    #         accessToken,
+    #         signing_key,
+    #         audience=config.auth0_api_audience,
+    #         issuer=config.auth0_issuer,
+    #         algorithms=config.auth0_algorithms,
+    #     )
+    # except JWTError as error:
+    #     raise HTTPException(
+    #         status_code=401, detail=str(error) or "Invalid access token"
+    #     )
 
 
 def verify_password(plain_password, hashed_password):
