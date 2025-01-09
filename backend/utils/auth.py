@@ -222,10 +222,10 @@ async def login_user(
     )
 
     response.set_cookie(
-        key="accessToken", value=access_token, httponly=True, samesite='none'
+        key="accessToken", value=access_token, httponly=True, samesite='none', secure=True
     )
     response.set_cookie(
-        key="refreshToken", value=refresh_token, httponly=True, samesite='none'
+        key="refreshToken", value=refresh_token, httponly=True, samesite='none', secure=True
     )
     
     db.users.update_one({"_id": ObjectId(user_id)}, {"$set": {"refreshToken": refresh_token}})
