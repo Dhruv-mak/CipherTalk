@@ -1,95 +1,143 @@
-# CipherTalk
+# CipherTalk - Real-Time Secure Chat Application 🚀
 
-Snapgram is a dynamic chat application designed to facilitate user communication through a real-time chat system. This application consists of a robust backend developed with FastAPI and a responsive frontend created using Next.js with TypeScript and Vite.
+[![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
+[![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![Socket.io](https://img.shields.io/badge/Socket.io-010101?style=for-the-badge&logo=socket.io&logoColor=white)](https://socket.io/)
 
-## Table of Contents
+CipherTalk is a modern, secure, and feature-rich chat application built with a focus on real-time communication and user experience. It leverages the power of FastAPI, React, and WebSocket technology to deliver seamless messaging capabilities.
 
-- [CipherTalk](#CipherTalk)
-  - [Table of Contents](#table-of-contents)
-  - [Screenshots](#screenshots)
-  - [Features](#features)
-    - [Authentication](#authentication)
-    - [Chat Functionalities](#chat-functionalities)
-      - [One-on-One Chat](#one-on-one-chat)
-      - [Group Chat](#group-chat)
-      - [Real-Time Notifications](#real-time-notifications)
-    - [Pages](#pages)
-      - [Login Page](#login-page)
-      - [Chat Page](#chat-page)
-      - [Profile Settings](#profile-settings)
-  - [Built with](#built-with)
-  - [Licence](#licence)
+## 🌟 Features
 
-## Screenshots
+### Authentication & Security
+- JWT-based authentication with access and refresh tokens
+- Secure password hashing using bcrypt
+- Email verification system
+- Password reset functionality
+- HTTP-only cookie implementation for enhanced security
 
-Home page
-![Home page](./public/previews/home.png)
+### Chat Functionality
+- Real-time messaging using Socket.IO
+- One-on-one private conversations
+- Group chat support with admin controls
+- File sharing capabilities
+- Typing indicators
+- Read receipts
+- Message history
 
-Login page
-![Login page](./public/previews/login.png)
+### User Experience
+- Modern, responsive UI built with React and TailwindCSS
+- Real-time updates and notifications
+- Intuitive group management
+- User search functionality
+- Avatar support
+- Clean and intuitive interface
 
-Chat Page
-![Chat Page](./public/previews/chat.png)
+### Monitoring & Performance
+- Grafana dashboard integration
+- MongoDB performance monitoring
+- Real-time database metrics
+- System health monitoring
+- Resource usage tracking
 
-Profile Settings
-![Profile Settings](./public/previews/profile.png)
+## 🛠️ Technology Stack
 
-## Features
+### Backend
+- **FastAPI**: High-performance Python web framework
+- **MongoDB**: NoSQL database for flexible data storage
+- **Socket.IO**: Real-time bidirectional event-based communication
+- **JWT**: Token-based authentication
+- **Bcrypt**: Password hashing
+- **Mailtrap**: Email testing service
 
-### Authentication
+### Frontend
+- **React**: UI library for building user interfaces
+- **TailwindCSS**: Utility-first CSS framework
+- **Socket.IO Client**: Real-time communication
+- **React Query**: Server state management
+- **React Router**: Navigation management
 
-- Robust user authentication flow in the backend with FastAPI.
-- Secured login system with options for email and password.
-- Automated email verification during the registration process using Mailtrap.
+### Monitoring
+- **Grafana**: Analytics and monitoring platform
+- **MongoDB Metrics**: Database performance tracking
+- **System Metrics**: Resource utilization monitoring
 
-### Chat Functionalities
+## 🚀 Getting Started
 
-#### One-on-One Chat
+### Prerequisites
+- Python 3.8+
+- Node.js 14+
+- MongoDB
+- Grafana
 
-- Users can initiate private chats with other users.
-- Chat history is stored and can be retrieved anytime.
+### Environment Variables
+```env
+ACCESS_TOKEN_SECRET=your_access_token_secret
+REFRESH_TOKEN_SECRET=your_refresh_token_secret
+ACCESS_TOKEN_EXPIRE_MINUTES=15
+REFRESH_TOKEN_EXPIRY=7
+MONGODB_URL=your_mongodb_url
+MAILTRAP_SMTP_USER=your_mailtrap_user
+MAILTRAP_SMTP_PASS=your_mailtrap_password
+```
 
-#### Group Chat
+### Installation
 
-- Users can create group chats.
-- Functionality to add or remove participants.
-- Real-time updates in group chats for all participants.
+1. Clone the repository
+```bash
+git clone https://github.com/yourusername/ciphertalk.git
+cd ciphertalk
+```
 
-#### Real-Time Notifications
+2. Set up the backend
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn main:app --reload
+```
 
-- Notifications for new messages, chat invitations, and more.
-- Real-time updates without needing to refresh the page.
+3. Set up the frontend
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-### Pages
+4. Set up Grafana monitoring
+```bash
+docker-compose up -d
+```
 
-#### Login Page
+## 📊 Monitoring Dashboard
 
-- Simple and secure login interface.
-- Option for password recovery and email verification resend.
+The Grafana dashboard provides real-time insights into:
+- MongoDB read/write operations
+- Query performance metrics
+- Connection pool status
+- System resource utilization
+- Error rates and types
+- User activity patterns
 
-#### Chat Page
+## 🔒 Security Features
 
-- Real-time chat functionality.
-- Supports sending text, images, and files.
+- **JWT Authentication**: Secure token-based user authentication
+- **HTTP-Only Cookies**: Prevention of XSS attacks
+- **Password Hashing**: Secure storage of user credentials
+- **Email Verification**: User validation through email
+- **Rate Limiting**: Protection against brute force attacks
+- **Input Validation**: Prevention of injection attacks
 
-#### Profile Settings
+## 🔄 API Documentation
 
-- Users can update their profile information.
-- Settings to manage account security and chat preferences.
+The API documentation is automatically generated using FastAPI's built-in Swagger UI and can be accessed at `/docs` when running the server.
 
-## Built with
-
-- [Next.js 14](https://nextjs.org)
-- [FastAPI](https://fastapi.tiangolo.com/)
-- [TypeScript](https://www.typescriptlang.org)
-- [Vite](https://vitejs.dev)
-- [MongoDB](https://mongodb.com)
-- [Tailwind CSS](https://tailwindcss.com)
-- [Socket.io](https://socket.io)
-- [Vercel](https://vercel.com) (Frontend Deployment)
-- [Heroku](https://heroku.com) (Backend Deployment)
-- [Mailtrap](https://mailtrap.io)
-
-## Licence
+## 📝 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 📧 Contact
+
+For any queries or support, please reach out to [dhruv.makwana5004@gmail.com](mailto:dhruv.makwana5004@gmail.com)
