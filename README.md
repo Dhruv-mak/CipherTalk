@@ -86,8 +86,8 @@ MAILTRAP_SMTP_PASS=your_mailtrap_password
 
 1. Clone the repository
 ```bash
-git clone https://github.com/yourusername/ciphertalk.git
-cd ciphertalk
+git clone https://github.com/Dhruv-mak/CipherTalk.git
+cd CipherTalk
 ```
 
 2. Set up the backend
@@ -106,10 +106,6 @@ npm install
 npm run dev
 ```
 
-4. Set up Grafana monitoring
-```bash
-docker-compose up -d
-```
 
 ## 📊 Monitoring Dashboard
 
